@@ -42,8 +42,3 @@ Response:
 
 ## Checkpoint (MANDATORY)
 
-Run:
-
-```powershell
-cat README.md
-```
