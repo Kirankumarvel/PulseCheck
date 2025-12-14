@@ -20,11 +20,14 @@ jobs:
           chmod 600 "$HOME/.ssh/id_ed25519"
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> "$HOME/.ssh/known_hosts"
 
-
       - name: Deploy to EC2
+        env:
+          APP_PORT: ${{ secrets.APP_PORT }}
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
             set -e
+
+            echo "Connected to EC2"
 
             if [ ! -d "PulseCheck" ]; then
               git clone https://github.com/Kirankumarvel/PulseCheck.git
@@ -40,7 +43,9 @@ jobs:
 
             docker run -d \
               --name pulsecheck \
-              -p ${{ secrets.APP_PORT }}:${{ secrets.APP_PORT }} \
+              -p \$APP_PORT:\$APP_PORT \
               --restart unless-stopped \
               pulsecheck:latest
+
+            docker ps
           EOF
