@@ -177,38 +177,92 @@ This project intentionally documents **real failures**, because DevOps is about 
 
 ---
 
-## 🧠 What I Learned (Key Takeaways)
+## 🧠 Engineering Questions I Asked & What I Learned
 
-### DevOps is About Validation, Not Assumptions
+This section captures the key questions I consciously asked myself during development, the decisions I made, and the practical DevOps lessons learned while building and deploying PulseCheck.
 
-* Green pipeline ≠ successful deployment
-* Browser-level verification is mandatory
+### ❓ How does my CI/CD pipeline work end-to-end — and how do I prove it actually deploys?
 
-### CI/CD Needs Proof Signals
+**What I asked myself**
 
-* Version markers are essential
-* Health endpoints are not optional
+* Is my pipeline only green, or is it truly deploying to production?
+* How can I verify that the latest commit is what’s running on the EC2 instance?
 
-### Security is Layered
+**What I implemented**
 
-* Security Groups
-* Network ACLs
-* SSH keys
-* Docker permissions
+* A GitHub Actions pipeline triggered on every push to main
+* CI stage to validate application startup
+* CD stage that:
+  * Connects to AWS EC2 via SSH using GitHub Secrets
+  * Builds a Docker image on the server
+  * Stops and removes any existing container
+  * Runs the updated container with proper port binding
+* A public `/health` endpoint returning a deployment version marker
 
-### Containers Can Lie
+**What I learned**
 
-* `docker ps` is not enough
-* You must check:
+* A successful pipeline run does not guarantee a successful deployment
+* Versioned health endpoints are a simple but powerful way to verify real production updates
+* CI/CD should be observable from outside the server, not just from logs
 
-  * Logs
-  * Image timestamps
-  * Port bindings
+---
 
-### Failures Are Learning Assets
+### ❓ Why did my deployment succeed but the app was unreachable?
 
-* Every failure improved pipeline robustness
-* Documenting mistakes improved understanding
+**What I asked myself**
+
+* If Docker says the container is running, why does the browser fail?
+* Is this an app issue, container issue, or infrastructure issue?
+
+**What I discovered**
+
+* Missing or incorrect EC2 Security Group inbound rules
+* Application not bound to `0.0.0.0`
+* Port exposed in Docker but blocked at the network level
+
+**What I learned**
+
+* Deployment spans application, container, OS, and cloud networking
+* Debugging DevOps issues requires moving layer by layer, not guessing
+* Tools don’t fail alone — integrations do
+
+---
+
+### ❓ Why did my CD job fail even though the code was correct?
+
+**What I asked myself**
+
+* Why is GitHub Actions failing before deployment even starts?
+* Why does SSH setup break on re-runs?
+
+**What I fixed**
+
+* Made SSH setup idempotent
+* Ensured directories and keys don’t error if they already exist
+* Handled container stop/remove commands safely
+
+**What I learned**
+
+* CI/CD pipelines must be re-runnable by design
+* Idempotency is a core DevOps principle, not an optimization
+* Pipelines should assume partial failure is normal
+
+---
+
+### ❓ What does this project really teach beyond tools?
+
+**Key takeaways**
+
+* DevOps is less about YAML and more about systems thinking
+* “Works on my machine” means nothing without production validation
+* Failures are signals — each one improved the pipeline design
+* Simple projects executed end-to-end are more valuable than complex demos
+
+---
+
+✅ **Final Reflection**
+
+This project helped me move from writing pipelines to owning deployments. I now approach CI/CD with a production mindset — validating not just execution, but outcome.
 
 ---
 
@@ -234,21 +288,6 @@ This project intentionally documents **real failures**, because DevOps is about 
 
 ---
 
-## 🧑‍💻 Why This Project Matters
-
-This project is not about perfection —
-it’s about **proving that CI/CD actually works in production-like conditions**.
-
-It reflects:
-
-* Real mistakes
-* Real debugging
-* Real validation
-* Real DevOps thinking
-
----
-
 ## 📄 License
 
 MIT
-
